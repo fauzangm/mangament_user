@@ -5,6 +5,7 @@ import '../bloc/undangan/undangan_bloc.dart';
 import '../models/undangan.dart';
 import '../widgets/neumorphic_button.dart';
 import 'presensi_page.dart';
+import 'detail_acara.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -22,6 +23,26 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  void _navigateToDetail(Undangan undangan) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DetailAcaraPage(
+          acaraData: {
+            'title': undangan.title,
+            'organization': undangan.organization,
+            'date': undangan.date,
+            'location': undangan.location,
+            'time': '10:00 - 12:00',
+            'description': undangan.description ?? 'Join us for this amazing event where we will discuss the latest trends in digital transformation and network with industry experts.',
+            'status': undangan.status,
+            'lat': -6.2088,
+            'lng': 106.8456,
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +50,7 @@ class _DashboardPageState extends State<DashboardPage> {
         create: (context) => UndanganBloc()..add(LoadUndangan()),
         child: Container(
           decoration: const BoxDecoration(
-            gradient: AppColors.backgroundGradient,
+            gradient: AppColors.glossyGradient,
           ),
           child: SafeArea(
             child: Column(
@@ -361,7 +382,7 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               TextButton(
                 onPressed: () {
-                  // TODO: Navigate to detail page
+                  _navigateToDetail(undangan);
                 },
                 child: const Text(
                   'View Details >',

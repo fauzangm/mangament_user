@@ -48,9 +48,10 @@ dependencies:
   
   # QR Code Scanner
   mobile_scanner: ^5.0.0
-  
-  # Floating Bottom Bar
-  flutter_floating_bottom_bar: ^1.1.0
+
+  # OSM Map
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:

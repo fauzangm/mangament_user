@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.glossyGradient,
         ),
         child: SafeArea(
           child: BlocListener<AuthBloc, AuthState>(
