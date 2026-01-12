@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:mangament_acara/core/themes/AppColors.dart';
 
 class PresensiPage extends StatefulWidget {
   const PresensiPage({super.key});
@@ -42,7 +43,7 @@ class _PresensiPageState extends State<PresensiPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
         action: SnackBarAction(
           label: 'Settings',
           textColor: Colors.white,
@@ -119,121 +120,191 @@ class _PresensiPageState extends State<PresensiPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Presensi'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Scan QR Code untuk Presensi',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            if (isScanning)
-              Expanded(
-                child: Stack(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.backgroundGradient,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(28),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    MobileScanner(
-                      controller: controller,
-                      onDetect: _onDetect,
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: QRScannerOverlayPainter(),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'QR Presence',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              )
-            else
+              ),
               Expanded(
                 child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          size: 100,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 20),
-                        Text(
-                          'Tap the button below to start scanning',
-                          style: TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(28),
                     ),
                   ),
-                ),
-              ),
-            const SizedBox(height: 20),
-            if (scannedResult.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border.all(color: Colors.green),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Last Scan Result:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Scan QR Code untuk Presensi',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      scannedResult,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
+                      const SizedBox(height: 14),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: const Color(0xFFE5E7EB),
+                              width: 1,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: isScanning
+                                ? Stack(
+                                    children: [
+                                      MobileScanner(
+                                        controller: controller,
+                                        onDetect: _onDetect,
+                                      ),
+                                      Positioned.fill(
+                                        child: CustomPaint(
+                                          painter: QRScannerOverlayPainter(),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : const Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.qr_code_scanner,
+                                          size: 72,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'Tekan tombol di bawah untuk mulai scan',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: AppColors.textSecondary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (scannedResult.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.25),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Last Scan Result',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                scannedResult,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (isScanning) {
+                              controller.stop();
+                              setState(() {
+                                isScanning = false;
+                              });
+                            } else {
+                              _startScanning();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: Text(
+                            isScanning ? 'Stop Scanning' : 'Start Scanning',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                if (isScanning) {
-                  controller.stop();
-                  setState(() {
-                    isScanning = false;
-                  });
-                } else {
-                  _startScanning();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                isScanning ? 'Stop Scanning' : 'Start Scanning',
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -248,7 +319,7 @@ class QRScannerOverlayPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
-      ..color = Colors.red
+      ..color = AppColors.primary
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
 
@@ -277,7 +348,7 @@ class QRScannerOverlayPainter extends CustomPainter {
 
     // Draw corner markers
     final cornerPaint = Paint()
-      ..color = Colors.red
+      ..color = AppColors.primary
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
