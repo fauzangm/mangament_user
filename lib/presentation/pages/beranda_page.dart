@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mangament_acara/core/themes/AppColors.dart';
 import '../bloc/undangan/undangan_bloc.dart';
 import '../models/undangan.dart';
-import '../widgets/neumorphic_button.dart';
 import 'presensi_page.dart';
 import 'detail_acara.dart';
 
@@ -15,12 +14,20 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  String? _selectedStatus;
+
   void _showQRScanner() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const PresensiPage(),
       ),
     );
+  }
+
+  void _toggleFilter(String status) {
+    setState(() {
+      _selectedStatus = _selectedStatus == status ? null : status;
+    });
   }
 
   void _navigateToDetail(Undangan undangan) {
@@ -50,7 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
         create: (context) => UndanganBloc()..add(LoadUndangan()),
         child: Container(
           decoration: const BoxDecoration(
-            gradient: AppColors.glossyGradient,
+            gradient: AppColors.backgroundGradient,
           ),
           child: SafeArea(
             child: Column(
@@ -92,7 +99,34 @@ class _DashboardPageState extends State<DashboardPage> {
                         top: 0,
                         left: 0,
                         right: 0,
-                        child: _buildTopHeader(),
+                        child: BlocBuilder<UndanganBloc, UndanganState>(
+                          builder: (context, state) {
+                            int total = 0;
+                            int pending = 0;
+                            int confirmed = 0;
+                            int declined = 0;
+
+                            if (state is UndanganLoaded) {
+                              total = state.undangans.length;
+                              pending = state.undangans
+                                  .where((u) => u.status.toLowerCase() == 'pending')
+                                  .length;
+                              confirmed = state.undangans
+                                  .where((u) => u.status.toLowerCase() == 'confirmed')
+                                  .length;
+                              declined = state.undangans
+                                  .where((u) => u.status.toLowerCase() == 'declined')
+                                  .length;
+                            }
+
+                            return _buildTopHeader(
+                              total: total,
+                              pending: pending,
+                              confirmed: confirmed,
+                              declined: declined,
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -107,66 +141,102 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildTopHeader() {
-  return Container(
-    padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
-    decoration: const BoxDecoration(
-      gradient: AppColors.backgroundGradient,
-      borderRadius: BorderRadius.vertical(
-        bottom: Radius.circular(28),
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'My Invitations',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '3 invitations',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const Icon(
-              Icons.logout,
-              color: Colors.white,
-              size: 20,
-            ),
-          ],
+  Widget _buildTopHeader({
+    required int total,
+    required int pending,
+    required int confirmed,
+    required int declined,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 28),
+      decoration: const BoxDecoration(
+        gradient: AppColors.backgroundGradient,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(28),
         ),
-        const SizedBox(height: 24),
-      ],
-    ),
-  );
-}
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'My Invitations',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$total invitations',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const Icon(
+                Icons.logout,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterCard(
+                  statusKey: 'pending',
+                  title: 'Pending',
+                  count: pending,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildFilterCard(
+                  statusKey: 'confirmed',
+                  title: 'Confirmed',
+                  count: confirmed,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildFilterCard(
+                  statusKey: 'declined',
+                  title: 'Declined',
+                  count: declined,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
 
   Widget _buildInvitationContent(List<Undangan> undangans) {
     final pendingUndangans = undangans
-        .where((u) => u.status == 'pending')
+        .where((u) => u.status.toLowerCase() == 'pending')
         .toList();
     final confirmedUndangans = undangans
-        .where((u) => u.status == 'confirmed')
+        .where((u) => u.status.toLowerCase() == 'confirmed')
         .toList();
     final declinedUndangans = undangans
-        .where((u) => u.status == 'declined')
+        .where((u) => u.status.toLowerCase() == 'declined')
         .toList();
+
+    final selected = _selectedStatus;
+    final isFiltered = selected != null;
 
     return Container(
       decoration: const BoxDecoration(
@@ -175,100 +245,120 @@ class _DashboardPageState extends State<DashboardPage> {
           top: Radius.circular(28),
         ),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 180), // Tambahkan padding atas untuk header
-            // Summary Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Pending',
-                    pendingUndangans.length,
-                    Colors.orange,
-                  ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 210),
+                    if (!isFiltered) ...[
+                      if (pendingUndangans.isNotEmpty) ...[
+                        _buildSectionHeader('REQUIRES ACTION (${pendingUndangans.length})'),
+                        const SizedBox(height: 12),
+                        ...pendingUndangans
+                            .map((undangan) => _buildUndanganCard(undangan))
+                            .toList(),
+                        const SizedBox(height: 24),
+                      ],
+                      if (confirmedUndangans.isNotEmpty) ...[
+                        _buildSectionHeader('CONFIRMED (${confirmedUndangans.length})'),
+                        const SizedBox(height: 12),
+                        ...confirmedUndangans
+                            .map((undangan) => _buildUndanganCard(undangan))
+                            .toList(),
+                        const SizedBox(height: 24),
+                      ],
+                      if (declinedUndangans.isNotEmpty) ...[
+                        _buildSectionHeader('DECLINED (${declinedUndangans.length})'),
+                        const SizedBox(height: 12),
+                        ...declinedUndangans
+                            .map((undangan) => _buildUndanganCard(undangan))
+                            .toList(),
+                      ],
+                    ] else ...[
+                      if (selected == 'pending') ...[
+                        _buildSectionHeader('REQUIRES ACTION (${pendingUndangans.length})'),
+                        const SizedBox(height: 12),
+                        ...pendingUndangans
+                            .map((undangan) => _buildUndanganCard(undangan))
+                            .toList(),
+                      ] else if (selected == 'confirmed') ...[
+                        _buildSectionHeader('CONFIRMED (${confirmedUndangans.length})'),
+                        const SizedBox(height: 12),
+                        ...confirmedUndangans
+                            .map((undangan) => _buildUndanganCard(undangan))
+                            .toList(),
+                      ] else if (selected == 'declined') ...[
+                        _buildSectionHeader('DECLINED (${declinedUndangans.length})'),
+                        const SizedBox(height: 12),
+                        ...declinedUndangans
+                            .map((undangan) => _buildUndanganCard(undangan))
+                            .toList(),
+                      ],
+                      if (selected == 'pending' && pendingUndangans.isEmpty)
+                        _buildEmptyFilteredState(),
+                      if (selected == 'confirmed' && confirmedUndangans.isEmpty)
+                        _buildEmptyFilteredState(),
+                      if (selected == 'declined' && declinedUndangans.isEmpty)
+                        _buildEmptyFilteredState(),
+                    ],
+                    const Spacer(),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Confirmed',
-                    confirmedUndangans.length,
-                    Colors.green,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildSummaryCard(
-                    'Declined',
-                    declinedUndangans.length,
-                    Colors.red,
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 24),
-
-            // Requires Action Section
-            if (pendingUndangans.isNotEmpty) ...[
-              _buildSectionHeader('REQUIRES ACTION (${pendingUndangans.length})'),
-              const SizedBox(height: 12),
-              ...pendingUndangans
-                  .map((undangan) => _buildUndanganCard(undangan))
-                  .toList(),
-              const SizedBox(height: 24),
-            ],
-
-            // Confirmed Section
-            if (confirmedUndangans.isNotEmpty) ...[
-              _buildSectionHeader('CONFIRMED (${confirmedUndangans.length})'),
-              const SizedBox(height: 12),
-              ...confirmedUndangans
-                  .map((undangan) => _buildUndanganCard(undangan))
-                  .toList(),
-            ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSummaryCard(String title, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+  Widget _buildFilterCard({
+    required String statusKey,
+    required String title,
+    required int count,
+  }) {
+    final isSelected = _selectedStatus == statusKey;
+
+    return GestureDetector(
+      onTap: () => _toggleFilter(statusKey),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.white.withOpacity(0.14),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.18),
+            width: 1,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            count.toString(),
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+        ),
+        child: Column(
+          children: [
+            Text(
+              count.toString(),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: isSelected ? AppColors.primary : Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? AppColors.primary : Colors.white,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -277,9 +367,37 @@ class _DashboardPageState extends State<DashboardPage> {
     return Text(
       title,
       style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.8,
+      ),
+    );
+  }
+
+  Widget _buildEmptyFilteredState() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: const Color(0xFFE5E7EB),
+            width: 1,
+          ),
+        ),
+        child: const Text(
+          'No invitations for this status.',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -400,7 +518,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Color _getStatusColor(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         return Colors.orange;
       case 'confirmed':
