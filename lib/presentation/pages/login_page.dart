@@ -222,7 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Logto Login Button
+                    // Logto Button
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
                         return GestureDetector(
@@ -268,7 +268,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  'Sign in with Logto',
+                                  _isSignUp ? 'Sign up with Logto' : 'Sign in with Logto',
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontSize: 16,

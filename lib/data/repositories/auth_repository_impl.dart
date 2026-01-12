@@ -1,18 +1,24 @@
 import '../models/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../core/services/logto_service.dart';
+import '../../core/services/local_auth_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final LogtoService logtoService;
+  final LocalAuthService localAuthService;
 
-  AuthRepositoryImpl(this.logtoService);
+  AuthRepositoryImpl(
+    this.logtoService,
+    this.localAuthService,
+  );
 
   @override
   Future<User> login(String username, String password) async {
-    // Note: With Logto, we use OAuth flow instead of username/password
-    // This method is kept for backward compatibility
-    // For Logto authentication, use loginWithLogto() instead
-    throw Exception('Use loginWithLogto() for Logto authentication');
+    try {
+      return await localAuthService.login(username, password);
+    } catch (e) {
+      throw Exception('Login failed: $e');
+    }
   }
 
   /// Sign in with Logto OAuth
@@ -26,9 +32,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<User> signUp(String username, String password, String email) async {
-    // Note: With Logto, sign up is handled through the OAuth flow
-    // Users sign up through Logto's sign-up page
-    throw Exception('Use loginWithLogto() for Logto authentication (handles both sign up and login)');
+    try {
+      return await localAuthService.signUp(username, password, email);
+    } catch (e) {
+      throw Exception('Sign up failed: $e');
+    }
   }
 
   @override
