@@ -5,6 +5,7 @@ import 'package:mangament_acara/core/di/injection_container.dart' as di;
 import 'package:mangament_acara/presentation/bloc/auth/auth_bloc.dart';
 import 'package:mangament_acara/presentation/pages/beranda_page.dart';
 import 'package:mangament_acara/presentation/pages/login_page.dart';
+import 'package:mangament_acara/presentation/pages/presensi_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/dashboard',
           name: 'dashboard',
-          builder: (context, state) => const DashboardPage(),
+          builder: (context, state) => const PresensiPage(),
         ),
       ],
     );

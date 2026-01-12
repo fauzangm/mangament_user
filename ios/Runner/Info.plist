@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to scan QR codes for attendance</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access to save QR code scan results if needed</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app does not use microphone, but some camera features may request it</string>
 </dict>
 </plist>
