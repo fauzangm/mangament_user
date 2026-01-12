@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mangament_acara/core/themes/AppColors.dart';
+import '../bloc/undangan/undangan_bloc.dart';
+import '../models/undangan.dart';
 import '../widgets/neumorphic_button.dart';
+import 'presensi_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -10,226 +14,417 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  int _currentIndex = 0;
-
-  static const List<_TabItem> _tabs = [
-    _TabItem('Beranda', Icons.admin_panel_settings),
-    _TabItem('Presensi', Icons.camera),
-    _TabItem('Monitor', Icons.monitor),
-    _TabItem('Profile', Icons.person),
-  ];
-
-  void _onSelect(int i) => setState(() => _currentIndex = i);
+  void _showQRScanner() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PresensiPage(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              // Header / title
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppColors.shadowDark,
-                            offset: Offset(6, 6),
-                            blurRadius: 18,
-                          ),
-                          BoxShadow(
-                            color: AppColors.shadowLight,
-                            offset: Offset(-6, -6),
-                            blurRadius: 18,
-                          ),
-                        ],
+      body: BlocProvider(
+        create: (context) => UndanganBloc()..add(LoadUndangan()),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: AppColors.backgroundGradient,
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Content di belakang
+                      BlocBuilder<UndanganBloc, UndanganState>(
+                        builder: (context, state) {
+                          if (state is UndanganLoading) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (state is UndanganError) {
+                            return Center(
+                              child: Text(
+                                'Error: ${state.message}',
+                                style: const TextStyle(color: AppColors.error),
+                              ),
+                            );
+                          }
+
+                          if (state is UndanganLoaded) {
+                            return _buildInvitationContent(state.undangans);
+                          }
+
+                          return const Center(child: Text('No invitations'));
+                        },
                       ),
-                      child: const Icon(Icons.event, color: AppColors.textPrimary),
+                      // Header di atas
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: _buildTopHeader(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      floatingActionButton: _buildFloatingQRButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildTopHeader() {
+  return Container(
+    padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+    decoration: const BoxDecoration(
+      gradient: AppColors.backgroundGradient,
+      borderRadius: BorderRadius.vertical(
+        bottom: Radius.circular(28),
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'My Invitations',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '3 invitations',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            const Icon(
+              Icons.logout,
+              color: Colors.white,
+              size: 20,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+      ],
+    ),
+  );
+}
+
+
+  Widget _buildInvitationContent(List<Undangan> undangans) {
+    final pendingUndangans = undangans
+        .where((u) => u.status == 'pending')
+        .toList();
+    final confirmedUndangans = undangans
+        .where((u) => u.status == 'confirmed')
+        .toList();
+    final declinedUndangans = undangans
+        .where((u) => u.status == 'declined')
+        .toList();
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 180), // Tambahkan padding atas untuk header
+            // Summary Cards
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Pending',
+                    pendingUndangans.length,
+                    Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Confirmed',
+                    confirmedUndangans.length,
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Declined',
+                    declinedUndangans.length,
+                    Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Requires Action Section
+            if (pendingUndangans.isNotEmpty) ...[
+              _buildSectionHeader('REQUIRES ACTION (${pendingUndangans.length})'),
+              const SizedBox(height: 12),
+              ...pendingUndangans
+                  .map((undangan) => _buildUndanganCard(undangan))
+                  .toList(),
+              const SizedBox(height: 24),
+            ],
+
+            // Confirmed Section
+            if (confirmedUndangans.isNotEmpty) ...[
+              _buildSectionHeader('CONFIRMED (${confirmedUndangans.length})'),
+              const SizedBox(height: 12),
+              ...confirmedUndangans
+                  .map((undangan) => _buildUndanganCard(undangan))
+                  .toList(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      ),
+    );
+  }
+
+  Widget _buildUndanganCard(Undangan undangan) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      undangan.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Text(
-                        'Beranda',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      undangan.organization,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              // Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _buildContentCard(_currentIndex),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(undangan.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-              ),
-              // Bottom navigation (neumorphic glossy)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.shadowDark,
-                        offset: Offset(10, 10),
-                        blurRadius: 24,
-                      ),
-                      BoxShadow(
-                        color: AppColors.shadowLight,
-                        offset: Offset(-10, -10),
-                        blurRadius: 24,
-                      ),
-                    ],
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppColors.primaryLighter, AppColors.primaryLight],
-                    ),
-                  ),
-                  child: Row(
-                    children: List.generate(_tabs.length, (i) {
-                      final selected = i == _currentIndex;
-                      return Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: NeumorphicButton(
-                            height: 56,
-                            onPressed: () => _onSelect(i),
-                            backgroundColor: selected ? AppColors.primary : AppColors.primaryLight,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _tabs[i].icon,
-                                    size: 20,
-                                    color: selected ? Colors.white : AppColors.textPrimary,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _tabs[i].label,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: selected ? Colors.white : AppColors.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
+                child: Text(
+                  undangan.status.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _getStatusColor(undangan.status),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                undangan.date,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                undangan.location,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () {
+                  // TODO: Navigate to detail page
+                },
+                child: const Text(
+                  'View Details >',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.green;
+      case 'declined':
+        return Colors.red;
+      default:
+        return Colors.red;
+    }
+  }
+
+  Widget _buildFloatingQRButton() {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white,
+          width: 4,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showQRScanner,
+          borderRadius: BorderRadius.circular(35),
+          child: const Padding(
+            padding: EdgeInsets.all(16),
+            child: Icon(
+              Icons.qr_code_scanner,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
         ),
       ),
     );
   }
-
-  Widget _buildContentCard(int index) {
-    // glossy neumorphic card with placeholder content per tab
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: AppColors.cardGradient,
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowDark,
-            offset: Offset(12, 12),
-            blurRadius: 30,
-          ),
-          BoxShadow(
-            color: AppColors.shadowLight,
-            offset: Offset(-12, -12),
-            blurRadius: 30,
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // glossy header badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: AppColors.glossyGradient,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0x80FFFFFF)),
-            ),
-            child: Text(
-              _tabs[index].label.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _tabs[index].icon,
-                    size: 84,
-                    color: AppColors.textPrimary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Halaman ${_tabs[index].label}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Konten ringkas untuk modul ini akan muncul di sini.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TabItem {
-  final String label;
-  final IconData icon;
-  const _TabItem(this.label, this.icon);
 }

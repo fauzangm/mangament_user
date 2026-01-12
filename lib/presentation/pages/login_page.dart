@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mangament_acara/core/themes/AppColors.dart';
 import '../bloc/auth/auth_bloc.dart';
-import '../widgets/neumorphic_button.dart';
-import '../widgets/neumorphic_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,40 +14,22 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _emailController = TextEditingController();
-  bool _isSignUp = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
-  void _toggleMode() {
-    setState(() {
-      _isSignUp = !_isSignUp;
-    });
-  }
-
   void _authenticate() {
-    if (_isSignUp) {
-      context.read<AuthBloc>().add(
-            SignUpRequested(
-              username: _usernameController.text,
-              password: _passwordController.text,
-              email: _emailController.text,
-            ),
-          );
-    } else {
-      context.read<AuthBloc>().add(
-            LoginRequested(
-              username: _usernameController.text,
-              password: _passwordController.text,
-            ),
-          );
-    }
+    context.read<AuthBloc>().add(
+          LoginRequested(
+            username: _usernameController.text,
+            password: _passwordController.text,
+          ),
+        );
   }
 
   @override
@@ -79,225 +59,280 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Shield Icon
                     Container(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: AppColors.primaryLight,
-                        gradient: AppColors.cardGradient,
-                        borderRadius: BorderRadius.circular(18),
+                        shape: BoxShape.circle,
                         boxShadow: [
-                          BoxShadow(color: AppColors.shadowDark, offset: const Offset(8, 8), blurRadius: 24),
-                          BoxShadow(color: AppColors.shadowLight, offset: const Offset(-8, -8), blurRadius: 24),
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.2),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
                         ],
                       ),
-                      child: const Icon(Icons.event, size: 56, color: AppColors.textPrimary),
+                      child: Icon(
+                        Icons.security,
+                        size: 60,
+                        color: AppColors.primary,
+                      ),
                     ),
                     const SizedBox(height: 40),
                     
                     // Title
-                    Text(
-                      _isSignUp ? 'Create Account' : 'Welcome Back',
-                      style: const TextStyle(
+                    const Text(
+                      'Invitation Portal',
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3748),
+                        color: Color(0xFF1F2937),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     
                     // Subtitle
-                    Text(
-                      _isSignUp
-                          ? 'Sign up to get started'
-                          : 'Sign in to continue',
-                      style: const TextStyle(
+                    const Text(
+                      'Secure access to official events',
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF718096),
+                        color: Color(0xFF6B7280),
                       ),
                     ),
-                    const SizedBox(height: 40),
-                    
-                    // Email field (only for sign up)
-                    if (_isSignUp) ...[
-                      NeumorphicTextField(
-                        controller: _emailController,
-                        hintText: 'Email',
-                        prefixIcon: Icons.email,
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                    const SizedBox(height: 50),
                     
                     // Username field
-                    NeumorphicTextField(
-                      controller: _usernameController,
-                      hintText: 'Username',
-                      prefixIcon: Icons.person,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _usernameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter your username',
+                          hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                          prefixIcon: Icon(Icons.person, color: Color(0xFF6B7280)),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     
                     // Password field
-                    NeumorphicTextField(
-                      controller: _passwordController,
-                      hintText: 'Password',
-                      prefixIcon: Icons.lock,
-                      obscureText: true,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your password',
+                          hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                          prefixIcon: const Icon(Icons.lock, color: Color(0xFF6B7280)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              color: const Color(0xFF6B7280),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 30),
                     
-                    // Auth Button
+                    // Login Button
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
-                        return NeumorphicButton(
+                        return Container(
+                          width: double.infinity,
                           height: 55,
-                          onPressed: state is AuthLoading ? null : _authenticate,
-                          backgroundColor: state is AuthLoading
-                              ? const Color(0xFFCBD5E0)
-                              : const Color(0xFF4299E1),
-                          child: state is AuthLoading
-                              ? const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Color(0xFF2D3748),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: state is AuthLoading ? null : _authenticate,
+                              child: Center(
+                                child: state is AuthLoading
+                                    ? const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            'Loading...',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const Text(
+                                        'Login',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Loading...',
-                                      style: TextStyle(
-                                        color: Color(0xFF2D3748),
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Text(
-                                  _isSignUp ? 'Sign Up' : 'Sign In',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                              ),
+                            ),
+                          ),
                         );
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
 
                     // Divider
                     Row(
                       children: [
                         Expanded(
-                          child: Divider(
-                            color: AppColors.textSecondary.withOpacity(0.3),
-                            thickness: 1,
+                          child: Container(
+                            height: 1,
+                            color: const Color(0xFFE5E7EB),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'OR',
                             style: TextStyle(
-                              color: AppColors.textSecondary,
+                              color: Color(0xFF6B7280),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Expanded(
-                          child: Divider(
-                            color: AppColors.textSecondary.withOpacity(0.3),
-                            thickness: 1,
+                          child: Container(
+                            height: 1,
+                            color: const Color(0xFFE5E7EB),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
 
-                    // Logto Button
+                    // Sign in with Logto Button
                     BlocBuilder<AuthBloc, AuthState>(
                       builder: (context, state) {
-                        return GestureDetector(
-                          onTap: state is AuthLoading
-                              ? null
-                              : () {
-                                  context.read<AuthBloc>().add(
-                                        const LoginWithLogtoRequested(),
-                                      );
-                                },
-                          child: Container(
-                            height: 55,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.cardGradient,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.shadowDark,
-                                  offset: const Offset(4, 4),
-                                  blurRadius: 12,
-                                ),
-                                BoxShadow(
-                                  color: AppColors.shadowLight,
-                                  offset: const Offset(-4, -4),
-                                  blurRadius: 12,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  'assets/logto_icon.png', // You'll need to add this asset
-                                  width: 24,
-                                  height: 24,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(
-                                      Icons.login,
-                                      size: 24,
-                                      color: AppColors.primary,
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  _isSignUp ? 'Sign up with Logto' : 'Sign in with Logto',
-                                  style: TextStyle(
+                        return Container(
+                          width: double.infinity,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: state is AuthLoading
+                                  ? null
+                                  : () {
+                                      context.read<AuthBloc>().add(
+                                            const LoginWithLogtoRequested(),
+                                          );
+                                    },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.security,
+                                    size: 24,
                                     color: AppColors.primary,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Sign in with Logto',
+                                    style: TextStyle(
+                                      color: Color(0xFF1F2937),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 50),
                     
-                    // Toggle Button
-                    if (!_isSignUp)
-                      NeumorphicButton(
-                        height: 45,
-                        backgroundColor: const Color(0xFFE0E5EC),
-                        onPressed: _toggleMode,
-                        child: const Text(
-                          'Don\'t have an account? Sign Up',
+                    // Footer text
+                    Column(
+                      children: [
+                        const Text(
+                          'Secure government portal',
                           style: TextStyle(
-                            color: Color(0xFF4A5568),
+                            color: Color(0xFF6B7280),
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '© 2026 Official Invitation System',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

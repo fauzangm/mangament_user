@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:mangament_acara/presentation/bloc/undangan/undangan_bloc.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../services/logto_service.dart';
@@ -30,5 +31,9 @@ Future<void> initDependencies() async {
     () => AuthBloc(
       authRepository: getIt<AuthRepository>(),
     ),
+  );
+
+    getIt.registerFactory<UndanganBloc>(
+    () => UndanganBloc(),
   );
 }
