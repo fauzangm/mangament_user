@@ -6,7 +6,6 @@ import 'package:mangament_acara/presentation/bloc/auth/auth_bloc.dart';
 import 'package:mangament_acara/presentation/bloc/undangan/undangan_bloc.dart';
 import 'package:mangament_acara/presentation/pages/beranda_page.dart';
 import 'package:mangament_acara/presentation/pages/login_page.dart';
-import 'package:mangament_acara/presentation/pages/presensi_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
