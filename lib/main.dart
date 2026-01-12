@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mangament_acara/core/di/injection_container.dart' as di;
+import 'package:mangament_acara/core/services/logto_service.dart';
 import 'package:mangament_acara/presentation/bloc/auth/auth_bloc.dart';
 import 'package:mangament_acara/presentation/bloc/undangan/undangan_bloc.dart';
 import 'package:mangament_acara/presentation/pages/beranda_page.dart';
@@ -10,6 +11,7 @@ import 'package:mangament_acara/presentation/pages/login_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await di.initDependencies();
+  await LogtoService().init();
   runApp(const MyApp());
 }
 
@@ -38,6 +40,20 @@ class MyApp extends StatelessWidget {
 
 final GoRouter _router = GoRouter(
   initialLocation: '/',
+  redirect: (context, state) {
+    final uri = state.uri;
+
+    if (uri.scheme == 'acara.logto') {
+      return '/';
+    }
+
+    if (uri.path == '/callback') {
+      return '/';
+    }
+
+    return null;
+  },
+  errorBuilder: (context, state) => const LoginPage(),
   routes: [
     GoRoute(
       path: '/',

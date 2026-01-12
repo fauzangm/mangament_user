@@ -51,5 +51,18 @@
 	<string>This app needs photo library access to save QR code scan results if needed</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app does not use microphone, but some camera features may request it</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>acara.logto</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>acara.logto</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
