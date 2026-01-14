@@ -14,20 +14,32 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  String? _selectedStatus;
+  void _showQRScanner() async {
+    final result = await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (context) => const PresensiPage()));
 
-  void _showQRScanner() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const PresensiPage(),
-      ),
-    );
+    // ⬇️ JIKA PRESENSI / CHECKIN BERHASIL
+    if (result == true) {
+      context.read<UndanganBloc>().add(LoadUndangan());
+    }
   }
 
-  void _toggleFilter(String status) {
-    setState(() {
-      _selectedStatus = _selectedStatus == status ? null : status;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bloc = context.read<UndanganBloc>();
+      if (bloc.state is UndanganInitial) {
+        bloc.add(LoadUndangan());
+      }
     });
+  }
+
+  void _toggleFilter(String status, String? currentSelected) {
+    final bloc = context.read<UndanganBloc>();
+    final next = currentSelected == status ? null : status;
+    bloc.add(FilterUndangan(status: next));
   }
 
   void _navigateToDetail(Undangan undangan) {
@@ -40,11 +52,14 @@ class _DashboardPageState extends State<DashboardPage> {
             'date': undangan.date,
             'location': undangan.location,
             'time': '10:00 - 12:00',
-            'description': undangan.description ?? 'Join us for this amazing event where we will discuss the latest trends in digital transformation and network with industry experts.',
+            'description':
+                undangan.description ??
+                'Join us for this amazing event where we will discuss the latest trends in digital transformation and network with industry experts.',
             'status': undangan.status,
             'lat': -6.2088,
             'lng': 106.8456,
           },
+          acaraId: int.parse(undangan.id),
         ),
       ),
     );
@@ -53,86 +68,82 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocProvider(
-        create: (context) => UndanganBloc()..add(LoadUndangan()),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: AppColors.backgroundGradient,
-          ),
-          child: SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    children: [
-                      // Content di belakang
-                      BlocBuilder<UndanganBloc, UndanganState>(
-                        builder: (context, state) {
-                          if (state is UndanganLoading) {
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  AppColors.primary,
-                                ),
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Content di belakang
+                    BlocBuilder<UndanganBloc, UndanganState>(
+                      builder: (context, state) {
+                        if (state is UndanganLoading) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation(
+                                AppColors.primary,
                               ),
-                            );
-                          }
+                            ),
+                          );
+                        }
 
-                          if (state is UndanganError) {
-                            return Center(
-                              child: Text(
-                                'Error: ${state.message}',
-                                style: const TextStyle(color: AppColors.error),
-                              ),
-                            );
-                          }
+                        if (state is UndanganError) {
+                          return Center(
+                            child: Text(
+                              'Error: ${state.message}',
+                              style: const TextStyle(color: AppColors.error),
+                            ),
+                          );
+                        }
+
+                        if (state is UndanganLoaded) {
+                          return _buildInvitationContent(
+                            allUndangans: state.allUndangans,
+                            visibleUndangans: state.visibleUndangans,
+                            selectedStatus: state.selectedStatus,
+                          );
+                        }
+
+                        return const Center(child: Text('No invitations'));
+                      },
+                    ),
+                    // Header di atas
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: BlocBuilder<UndanganBloc, UndanganState>(
+                        builder: (context, state) {
+                          int total = 0;
+                          int pending = 0;
+                          int confirmed = 0;
+                          int declined = 0;
+                          String? selectedStatus;
 
                           if (state is UndanganLoaded) {
-                            return _buildInvitationContent(state.undangans);
+                            total = state.totalCount;
+                            pending = state.pendingCount;
+                            confirmed = state.confirmedCount;
+                            declined = state.declinedCount;
+                            selectedStatus = state.selectedStatus;
                           }
 
-                          return const Center(child: Text('No invitations'));
+                          return _buildTopHeader(
+                            total: total,
+                            pending: pending,
+                            confirmed: confirmed,
+                            declined: declined,
+                            selectedStatus: selectedStatus,
+                          );
                         },
                       ),
-                      // Header di atas
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: BlocBuilder<UndanganBloc, UndanganState>(
-                          builder: (context, state) {
-                            int total = 0;
-                            int pending = 0;
-                            int confirmed = 0;
-                            int declined = 0;
-
-                            if (state is UndanganLoaded) {
-                              total = state.undangans.length;
-                              pending = state.undangans
-                                  .where((u) => u.status.toLowerCase() == 'pending')
-                                  .length;
-                              confirmed = state.undangans
-                                  .where((u) => u.status.toLowerCase() == 'confirmed')
-                                  .length;
-                              declined = state.undangans
-                                  .where((u) => u.status.toLowerCase() == 'declined')
-                                  .length;
-                            }
-
-                            return _buildTopHeader(
-                              total: total,
-                              pending: pending,
-                              confirmed: confirmed,
-                              declined: declined,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -146,14 +157,13 @@ class _DashboardPageState extends State<DashboardPage> {
     required int pending,
     required int confirmed,
     required int declined,
+    required String? selectedStatus,
   }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 48, 20, 28),
       decoration: const BoxDecoration(
         gradient: AppColors.backgroundGradient,
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(28),
-        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,11 +193,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
-              const Icon(
-                Icons.logout,
-                color: Colors.white,
-                size: 20,
-              ),
+              const Icon(Icons.logout, color: Colors.white, size: 20),
             ],
           ),
           const SizedBox(height: 18),
@@ -198,6 +204,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   statusKey: 'pending',
                   title: 'Pending',
                   count: pending,
+                  selectedStatus: selectedStatus,
                 ),
               ),
               const SizedBox(width: 12),
@@ -206,6 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   statusKey: 'confirmed',
                   title: 'Confirmed',
                   count: confirmed,
+                  selectedStatus: selectedStatus,
                 ),
               ),
               const SizedBox(width: 12),
@@ -214,6 +222,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   statusKey: 'declined',
                   title: 'Declined',
                   count: declined,
+                  selectedStatus: selectedStatus,
                 ),
               ),
             ],
@@ -223,27 +232,30 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildInvitationContent({
+    required List<Undangan> allUndangans,
+    required List<Undangan> visibleUndangans,
+    required String? selectedStatus,
+  }) {
+    final source = selectedStatus == null ? allUndangans : visibleUndangans;
 
-  Widget _buildInvitationContent(List<Undangan> undangans) {
-    final pendingUndangans = undangans
+    final pendingUndangans = source
         .where((u) => u.status.toLowerCase() == 'pending')
         .toList();
-    final confirmedUndangans = undangans
+    final confirmedUndangans = source
         .where((u) => u.status.toLowerCase() == 'confirmed')
         .toList();
-    final declinedUndangans = undangans
+    final declinedUndangans = source
         .where((u) => u.status.toLowerCase() == 'declined')
         .toList();
 
-    final selected = _selectedStatus;
+    final selected = selectedStatus;
     final isFiltered = selected != null;
 
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -258,7 +270,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 210),
                     if (!isFiltered) ...[
                       if (pendingUndangans.isNotEmpty) ...[
-                        _buildSectionHeader('REQUIRES ACTION (${pendingUndangans.length})'),
+                        _buildSectionHeader(
+                          'REQUIRES ACTION (${pendingUndangans.length})',
+                        ),
                         const SizedBox(height: 12),
                         ...pendingUndangans
                             .map((undangan) => _buildUndanganCard(undangan))
@@ -266,7 +280,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 24),
                       ],
                       if (confirmedUndangans.isNotEmpty) ...[
-                        _buildSectionHeader('CONFIRMED (${confirmedUndangans.length})'),
+                        _buildSectionHeader(
+                          'CONFIRMED (${confirmedUndangans.length})',
+                        ),
                         const SizedBox(height: 12),
                         ...confirmedUndangans
                             .map((undangan) => _buildUndanganCard(undangan))
@@ -274,7 +290,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 24),
                       ],
                       if (declinedUndangans.isNotEmpty) ...[
-                        _buildSectionHeader('DECLINED (${declinedUndangans.length})'),
+                        _buildSectionHeader(
+                          'DECLINED (${declinedUndangans.length})',
+                        ),
                         const SizedBox(height: 12),
                         ...declinedUndangans
                             .map((undangan) => _buildUndanganCard(undangan))
@@ -282,19 +300,25 @@ class _DashboardPageState extends State<DashboardPage> {
                       ],
                     ] else ...[
                       if (selected == 'pending') ...[
-                        _buildSectionHeader('REQUIRES ACTION (${pendingUndangans.length})'),
+                        _buildSectionHeader(
+                          'REQUIRES ACTION (${pendingUndangans.length})',
+                        ),
                         const SizedBox(height: 12),
                         ...pendingUndangans
                             .map((undangan) => _buildUndanganCard(undangan))
                             .toList(),
                       ] else if (selected == 'confirmed') ...[
-                        _buildSectionHeader('CONFIRMED (${confirmedUndangans.length})'),
+                        _buildSectionHeader(
+                          'CONFIRMED (${confirmedUndangans.length})',
+                        ),
                         const SizedBox(height: 12),
                         ...confirmedUndangans
                             .map((undangan) => _buildUndanganCard(undangan))
                             .toList(),
                       ] else if (selected == 'declined') ...[
-                        _buildSectionHeader('DECLINED (${declinedUndangans.length})'),
+                        _buildSectionHeader(
+                          'DECLINED (${declinedUndangans.length})',
+                        ),
                         const SizedBox(height: 12),
                         ...declinedUndangans
                             .map((undangan) => _buildUndanganCard(undangan))
@@ -322,11 +346,12 @@ class _DashboardPageState extends State<DashboardPage> {
     required String statusKey,
     required String title,
     required int count,
+    required String? selectedStatus,
   }) {
-    final isSelected = _selectedStatus == statusKey;
+    final isSelected = selectedStatus == statusKey;
 
     return GestureDetector(
-      onTap: () => _toggleFilter(statusKey),
+      onTap: () => _toggleFilter(statusKey, selectedStatus),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -384,10 +409,7 @@ class _DashboardPageState extends State<DashboardPage> {
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: const Color(0xFFE5E7EB),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         ),
         child: const Text(
           'No invitations for this status.',
@@ -544,10 +566,7 @@ class _DashboardPageState extends State<DashboardPage> {
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(
-          color: Colors.white,
-          width: 4,
-        ),
+        border: Border.all(color: Colors.white, width: 4),
       ),
       child: Material(
         color: Colors.transparent,
@@ -556,11 +575,7 @@ class _DashboardPageState extends State<DashboardPage> {
           borderRadius: BorderRadius.circular(35),
           child: const Padding(
             padding: EdgeInsets.all(16),
-            child: Icon(
-              Icons.qr_code_scanner,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
           ),
         ),
       ),

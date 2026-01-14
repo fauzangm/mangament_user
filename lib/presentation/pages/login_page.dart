@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mangament_acara/core/sessionMangaer.dart';
 import 'package:mangament_acara/core/themes/AppColors.dart';
 import '../bloc/auth/auth_bloc.dart';
 
@@ -22,6 +23,22 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     super.dispose();
   }
+
+@override
+void initState() {
+  super.initState();
+  _checkLogin();
+}
+
+Future<void> _checkLogin() async {
+  final isLogin = await getIsLogin();
+
+  if (!mounted) return;
+
+  if (isLogin == true) {
+    context.go('/dashboard');
+  }
+}
 
   void _authenticate() {
     context.read<AuthBloc>().add(
@@ -48,8 +65,9 @@ class _LoginPageState extends State<LoginPage> {
                 );
               } else if (state is AuthAuthenticated) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Welcome ${state.user.username}!'), backgroundColor: AppColors.primary),
+                  SnackBar(content: Text('Welcome ${state.user.user?.name ?? ""}!'), backgroundColor: AppColors.primary),
                 );
+                SaveTokenToSessionManager(state.user.accessToken ?? "");
                 context.go('/dashboard');
               }
             },

@@ -121,30 +121,42 @@ class Acara {
 }
 
 class AcaraModel {
+  int? id;
   String? nama;
   String? deskripsi;
   String? tglMulai;
   String? tglSelesai;
   String? lokasi;
+  String? status;
 
   AcaraModel(
-      {this.nama, this.deskripsi, this.tglMulai, this.tglSelesai, this.lokasi});
+      {this.id,
+      this.nama,
+      this.deskripsi,
+      this.tglMulai,
+      this.tglSelesai,
+      this.lokasi,
+      this.status});
 
   AcaraModel.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
     nama = json['nama'];
     deskripsi = json['deskripsi'];
     tglMulai = json['tgl_mulai'];
     tglSelesai = json['tgl_selesai'];
     lokasi = json['lokasi'];
+    status = json['status'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
     data['nama'] = this.nama;
     data['deskripsi'] = this.deskripsi;
     data['tgl_mulai'] = this.tglMulai;
     data['tgl_selesai'] = this.tglSelesai;
     data['lokasi'] = this.lokasi;
+    data['status'] = this.status;
     return data;
   }
 }

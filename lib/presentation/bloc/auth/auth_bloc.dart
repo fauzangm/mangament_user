@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:mangament_acara/data/models/loginResponse.dart';
 import '../../../data/models/user.dart';
 import '../../../data/repositories/auth_repository_impl.dart';
 import '../../../domain/repositories/auth_repository.dart';
@@ -47,7 +48,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.password,
         event.email,
       );
-      emit(AuthAuthenticated(user));
+      // emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -61,7 +62,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final authRepositoryImpl = authRepository as AuthRepositoryImpl;
       final user = await authRepositoryImpl.loginWithLogto();
-      emit(AuthAuthenticated(user));
+      // emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
@@ -87,7 +88,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final user = await authRepository.getCurrentUser();
       if (user != null) {
-        emit(AuthAuthenticated(user));
+        // emit(AuthAuthenticated(user));
       } else {
         emit(AuthUnauthenticated());
       }

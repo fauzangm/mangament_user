@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mangament_acara/core/themes/AppColors.dart';
+import 'package:mangament_acara/core/di/injection_container.dart' as di;
+import 'package:mangament_acara/data/models/undangan_detail.dart';
+import 'package:mangament_acara/presentation/bloc/undangan_detail/undangan_detail_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mangament_acara/presentation/bloc/undangan_detail/undangan_detail_event.dart';
+import 'package:mangament_acara/presentation/bloc/undangan_detail/undangan_detail_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DetailAcaraPage extends StatefulWidget {
   final Map<String, dynamic> acaraData;
-  
-  const DetailAcaraPage({super.key, required this.acaraData});
+  final int? acaraId;
+
+  const DetailAcaraPage({super.key, required this.acaraData, this.acaraId});
 
   @override
   State<DetailAcaraPage> createState() => _DetailAcaraPageState();
@@ -24,8 +31,12 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
     final query = Uri.encodeComponent('$lat,$lng');
 
     // Prefer Google Maps app if available, fallback to web.
-    final appUri = Uri.parse('comgooglemaps://?q=$query&center=$lat,$lng&zoom=15');
-    final webUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    final appUri = Uri.parse(
+      'comgooglemaps://?q=$query&center=$lat,$lng&zoom=15',
+    );
+    final webUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$query',
+    );
 
     if (await canLaunchUrl(appUri)) {
       await launchUrl(appUri, mode: LaunchMode.externalApplication);
@@ -37,7 +48,8 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
 
   Widget _buildBottomActions(String status) {
     final statusLower = status.toLowerCase();
-    final isPending = statusLower == 'pending' || statusLower == 'pending_response';
+    final isPending =
+        statusLower == 'pending' || statusLower == 'pending_response';
 
     if (isPending) {
       return _buildAcceptDeclineRow();
@@ -79,19 +91,26 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Text(
-                'Accept',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          child: GestureDetector(
+            onTap: () {
+              context.read<UndanganDetailBloc>().add(
+                ConfirmUndangan(id: widget.acaraId!, isAccept: true),
+              );
+            },
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text(
+                  'Accept',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -99,23 +118,27 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.primary,
-                width: 2,
+          child: GestureDetector(
+            onTap: () {
+              context.read<UndanganDetailBloc>().add(
+                ConfirmUndangan(id: widget.acaraId!, isAccept: false),
+              );
+            },
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primary, width: 2),
               ),
-            ),
-            child: const Center(
-              child: Text(
-                'Decline',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              child: const Center(
+                child: Text(
+                  'Decline',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -146,10 +169,7 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
         icon: Icon(icon, size: 20),
         label: Text(
           label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -167,10 +187,7 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
         onPressed: onTap,
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
-          side: const BorderSide(
-            color: Color(0xFFE5E7EB),
-            width: 2,
-          ),
+          side: const BorderSide(color: Color(0xFFE5E7EB), width: 2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -178,10 +195,7 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
         icon: Icon(icon, size: 20, color: AppColors.textPrimary),
         label: Text(
           label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -197,14 +211,28 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
     _eventLocation = LatLng(lat, lng);
   }
 
+  void _applyDetail(UndanganDetailResponse response) {
+    final data = response.data;
+    if (data == null) return;
+
+    setState(() {
+      widget.acaraData['title'] = data.nama ?? widget.acaraData['title'];
+      widget.acaraData['date'] = data.tglMulai ?? widget.acaraData['date'];
+      widget.acaraData['location'] =
+          data.lokasi ?? widget.acaraData['location'];
+      widget.acaraData['description'] =
+          data.deskripsi ?? widget.acaraData['description'];
+      widget.acaraData['status'] = data.status ?? widget.acaraData['status'];
+      widget.acaraData['terms'] = data.ketentuan ?? widget.acaraData['terms'];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = (widget.acaraData['status'] ?? '').toString();
-    return Scaffold(
+    final scaffold = Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -265,7 +293,7 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                   ],
                 ),
               ),
-              
+
               // Content
               Expanded(
                 child: Container(
@@ -294,8 +322,12 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                               _buildInfoRow(
                                 icon: Icons.location_on,
                                 title: 'Location',
-                                main: widget.acaraData['location'] ?? 'Event Location',
-                                sub: widget.acaraData['location_detail'] ?? 'Jakarta International Expo, Hall A',
+                                main:
+                                    widget.acaraData['location'] ??
+                                    'Event Location',
+                                sub:
+                                    widget.acaraData['location_detail'] ??
+                                    'Jakarta International Expo, Hall A',
                               ),
                             ],
                           ),
@@ -316,7 +348,8 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                widget.acaraData['organization'] ?? 'Organization Name',
+                                widget.acaraData['organization'] ??
+                                    'Organization Name',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: AppColors.textPrimary,
@@ -327,7 +360,7 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Description
                         _buildCard(
                           child: Column(
@@ -343,7 +376,8 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                widget.acaraData['description'] ?? 'Event description will appear here.',
+                                widget.acaraData['description'] ??
+                                    'Event description will appear here.',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: AppColors.textSecondary,
@@ -368,16 +402,25 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              _buildRundownRow('08:00 - 09:00', 'Registration & Welcome Coffee'),
+                              _buildRundownRow(
+                                '08:00 - 09:00',
+                                'Registration & Welcome Coffee',
+                              ),
                               const SizedBox(height: 10),
-                              _buildRundownRow('09:00 - 10:30', 'Opening Remarks & Keynote'),
+                              _buildRundownRow(
+                                '09:00 - 10:30',
+                                'Opening Remarks & Keynote',
+                              ),
                               const SizedBox(height: 10),
-                              _buildRundownRow('10:30 - 12:00', 'Main Session & Discussion'),
+                              _buildRundownRow(
+                                '10:30 - 12:00',
+                                'Main Session & Discussion',
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Google Maps
                         _buildCard(
                           child: Column(
@@ -408,15 +451,17 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                                           initialCenter: _eventLocation,
                                           initialZoom: 18,
                                           // Make it behave like a preview (tap to open maps)
-                                          interactionOptions: const InteractionOptions(
-                                            flags: InteractiveFlag.none,
-                                          ),
+                                          interactionOptions:
+                                              const InteractionOptions(
+                                                flags: InteractiveFlag.none,
+                                              ),
                                         ),
                                         children: [
                                           TileLayer(
                                             urlTemplate:
                                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                            userAgentPackageName: 'mangament_acara',
+                                            userAgentPackageName:
+                                                'mangament_acara',
                                           ),
                                           MarkerLayer(
                                             markers: [
@@ -430,9 +475,13 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                                                     shape: BoxShape.circle,
                                                     boxShadow: [
                                                       BoxShadow(
-                                                        color: Colors.black.withOpacity(0.2),
+                                                        color: Colors.black
+                                                            .withOpacity(0.2),
                                                         blurRadius: 8,
-                                                        offset: const Offset(0, 4),
+                                                        offset: const Offset(
+                                                          0,
+                                                          4,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),
@@ -464,11 +513,11 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Terms & Conditions
                         _buildTermsSection(),
                         const SizedBox(height: 32),
-                        
+
                         _buildBottomActions(status),
                       ],
                     ),
@@ -477,6 +526,51 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+
+    final acaraId = widget.acaraId;
+    if (acaraId == null) {
+      return scaffold;
+    }
+
+    return BlocProvider<UndanganDetailBloc>(
+      create: (_) =>
+          di.getIt<UndanganDetailBloc>()..add(LoadUndanganDetail(acaraId)),
+      child: BlocListener<UndanganDetailBloc, UndanganDetailState>(
+        listener: (context, state) {
+          if (state is UndanganDetailLoaded) {
+            _applyDetail(state.response);
+          }
+        },
+        child: BlocBuilder<UndanganDetailBloc, UndanganDetailState>(
+          builder: (context, state) {
+            if (state is UndanganDetailLoading) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            if (state is UndanganDetailError) {
+              return Scaffold(
+                body: Center(
+                  child: Text(
+                    state.message,
+                    style: const TextStyle(color: AppColors.error),
+                  ),
+                ),
+              );
+            }
+
+            return scaffold;
+          },
         ),
       ),
     );
@@ -541,10 +635,7 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
       ),
       child: child,
     );
@@ -681,8 +772,9 @@ class _DetailAcaraPageState extends State<DetailAcaraPage> {
         ),
         AnimatedCrossFade(
           duration: const Duration(milliseconds: 220),
-          crossFadeState:
-              _isTermsExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: _isTermsExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           firstChild: const SizedBox.shrink(),
           secondChild: Padding(
             padding: const EdgeInsets.only(top: 10),
